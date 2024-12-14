@@ -1,3 +1,7 @@
+# The following source code was adapted from:
+# GitHub: https://github.com/timesler/facenet-pytorch
+# License: MIT License
+
 import torch
 from torch.nn.functional import interpolate
 from torchvision.transforms import functional as F
