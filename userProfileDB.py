@@ -3,6 +3,21 @@ import numpy as np
 import datetime
 import os
 import pandas as pd
+import torch
+import io
+
+# Serialize the tensor
+def serialize_tensor(tensor):
+    buffer = io.BytesIO()
+    torch.save(tensor, buffer)
+    buffer.seek(0)
+    return buffer.read()
+
+# Deserialize the tensor
+def deserialize_tensor(blob):
+    buffer = io.BytesIO(blob)
+    buffer.seek(0)
+    return torch.load(buffer)
 
 class UserProfileDB:
     def __init__(self, db_folder="database"):
@@ -72,6 +87,9 @@ class UserProfileDB:
             face_embedding2d (numpy.ndarray): The 2D face embedding.
             face_embedding3d (numpy.ndarray): The 3D face embedding.
         """
+        face_embedding2d = serialize_tensor(face_embedding2d)
+        face_embedding3d = serialize_tensor(face_embedding3d)
+        
         if self.user_exists(phone_number):
             print(f"User with phone number {phone_number} already exists.")
             return None
@@ -87,7 +105,7 @@ class UserProfileDB:
 
             cursor.execute(
                 "INSERT INTO embeddings (user_id, embedding2d, embedding3d) VALUES (?, ?, ?)",
-                (user_id, face_embedding2d.tobytes(), face_embedding3d.tobytes()),
+                (user_id, face_embedding2d, face_embedding3d),
             )
 
             self.conn.commit()
@@ -196,8 +214,9 @@ class UserProfileDB:
             data = []
             for row in results:
                 user_id, embedding2d_blob, embedding3d_blob = row
-                embedding2d = np.frombuffer(embedding2d_blob)
-                embedding3d = np.frombuffer(embedding3d_blob)
+                embedding2d = deserialize_tensor(embedding2d_blob)
+                embedding3d = deserialize_tensor(embedding3d_blob)
+                
                 data.append([user_id, embedding2d, embedding3d])
             
             df = pd.DataFrame(data, columns=["user_id", "embedding2d", "embedding3d"])
@@ -231,3 +250,11 @@ class UserProfileDB:
         except Exception as e:
             print(f"Error retrieving user information: {e}")
             return None
+        
+        
+    def close_connection(self):
+        """
+        Close the connection to the database
+        """
+        self.conn.close()
+        print("Database connection closed.")
