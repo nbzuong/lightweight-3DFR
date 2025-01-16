@@ -212,10 +212,14 @@ class MTCNN(nn.Module):
         self.keep_all = keep_all
         self.selection_method = selection_method
 
-        self.pnet = PNet(state_dict_path=state_dict_path + 'pnet.pt')
-        self.rnet = RNet(state_dict_path=state_dict_path + 'rnet.pt')
-        self.onet = ONet(state_dict_path=state_dict_path + 'onet.pt')
-
+        if state_dict_path is not None:
+            self.pnet = PNet(state_dict_path=state_dict_path + 'pnet.pt')
+            self.rnet = RNet(state_dict_path=state_dict_path + 'rnet.pt')
+            self.onet = ONet(state_dict_path=state_dict_path + 'onet.pt')
+        else:
+            self.pnet = PNet(pretrained=False)
+            self.rnet = RNet(pretrained=False)
+            self.onet = ONet(pretrained=False)
         self.device = torch.device('cpu')
         if device is not None:
             self.device = device
